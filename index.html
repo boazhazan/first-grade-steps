@@ -1402,7 +1402,7 @@ function startDots(type){
 
 function initDotsCanvas(){
   const canvas=document.getElementById('dotsCanvas');
-  dotsCtx=canvas.getContext('2d');
+  dotsCtx=canvas.getContext('2d',{willReadFrequently:true});
 
   function getPos(e,r){
     const sx=canvas.width/r.width, sy=canvas.height/r.height;
@@ -1435,48 +1435,77 @@ function drawStroke(x1,y1,x2,y2){
 }
 
 function drawTraceGuide(ch){
-  // Draw the letter as a large dashed outline on the trace canvas
   const c=document.getElementById('dotsCanvas');
   if(!dotsCtx)dotsCtx=c.getContext('2d');
-
-  // Clear previous drawing
   dotsCtx.clearRect(0,0,c.width,c.height);
-
-  // Draw faint outline letter using canvas text
   dotsCtx.save();
 
-  // Big dashed outline
   const isHeb=(dotsType==='heb');
-  const isNum=(dotsType==='nums');
-  const fontSize = (ch==='10'||ch.length>1) ? 160 : 200;
-
+  const fontSize=(ch==='10'||ch.length>1)?160:200;
   dotsCtx.font=`900 ${fontSize}px ${isHeb?'Heebo,':''}monospace,sans-serif`;
   dotsCtx.textAlign='center';
   dotsCtx.textBaseline='middle';
 
-  // Dashed outline — draw multiple times with setLineDash
+  // Dashed outline
   dotsCtx.lineWidth=3;
   dotsCtx.setLineDash([12,8]);
   dotsCtx.strokeStyle='rgba(255,255,255,0.5)';
-  dotsCtx.strokeText(ch, c.width/2, c.height/2);
+  dotsCtx.strokeText(ch,c.width/2,c.height/2);
 
-  // Solid very faint fill
+  // Faint fill
   dotsCtx.setLineDash([]);
   dotsCtx.fillStyle='rgba(255,255,255,0.07)';
-  dotsCtx.fillText(ch, c.width/2, c.height/2);
+  dotsCtx.fillText(ch,c.width/2,c.height/2);
 
-  // Start arrow hint — small dot at top-left of letter
+  // Start arrow
   dotsCtx.beginPath();
-  dotsCtx.arc(c.width/2-fontSize*0.25, c.height/2-fontSize*0.35, 8, 0, Math.PI*2);
+  dotsCtx.arc(c.width/2-fontSize*0.25,c.height/2-fontSize*0.35,8,0,Math.PI*2);
   dotsCtx.fillStyle='rgba(255,107,157,0.7)';
   dotsCtx.fill();
   dotsCtx.fillStyle='rgba(255,255,255,0.9)';
   dotsCtx.font='bold 10px sans-serif';
   dotsCtx.setLineDash([]);
   dotsCtx.fillText('▶',c.width/2-fontSize*0.25,c.height/2-fontSize*0.35);
-
   dotsCtx.restore();
+
+  // Build reference map of letter pixels on a hidden canvas
+  buildLetterRef(ch, fontSize, isHeb);
 }
+
+// Hidden canvas to know WHERE the letter pixels are
+let letterRefPixels=null;
+let letterBBox=null; // {x1,y1,x2,y2} bounding box of the letter on canvas
+
+function buildLetterRef(ch, fontSize, isHeb){
+  // Create offscreen canvas — completely separate from dotsCanvas
+  const off=document.createElement('canvas');
+  off.width=280; off.height=280;
+  const ctx=off.getContext('2d');
+
+  // Draw letter SOLID BLACK on white background
+  ctx.fillStyle='#000';
+  ctx.fillRect(0,0,280,280);
+  ctx.font=`900 ${fontSize}px ${isHeb?'Heebo,sans-serif':'monospace,sans-serif'}`;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillStyle='#fff';
+  ctx.fillText(ch,140,140);
+  // Also stroke with thick line for better coverage tolerance
+  ctx.lineWidth=20;
+  ctx.strokeStyle='#fff';
+  ctx.strokeText(ch,140,140);
+
+  // Collect white pixel indices
+  const data=ctx.getImageData(0,0,280,280).data;
+  const s=new Set();
+  for(let i=0;i<data.length;i+=4){
+    if(data[i]>200) s.add(i); // white pixel
+  }
+  letterRefPixels=s;
+  letterBBox=null;
+}
+
+function int(n){return Math.floor(n);}
 
 function loadDotsChar(){
   if(dotsIdx>=dotsPool.length){
@@ -1515,16 +1544,63 @@ function clearDotsCanvas(){
 }
 
 function approveDrawing(){
-  if(dotsIdx<dotsPool.length){
-    addScore(8);
-    set('dotsFb',rndMsg());cls('dotsFb','fb ok');
-    dotsIdx++;
-    setTimeout(()=>{
-      // remove only dynamically added buttons (end-of-game back button)
-      document.querySelectorAll('#dotsScr .dyn-btn').forEach(b=>b.remove());
-      loadDotsChar();
-    },700);
+  if(dotsIdx>=dotsPool.length) return;
+
+  const canvas=document.getElementById('dotsCanvas');
+  const ctx=canvas.getContext('2d');
+  const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+
+  // Count yellow pixels (child's drawing)
+  let totalDrawn=0;
+  for(let i=0;i<pixels.length;i+=4){
+    if(pixels[i]>180 && pixels[i+1]>150 && pixels[i+2]<120 && pixels[i+3]>50)
+      totalDrawn++;
   }
+
+  if(totalDrawn<300){
+    showTraceMsg('✏️ צַיֵּר אֶת הָאוֹת תְּחִילָה!');
+    return;
+  }
+
+  if(letterRefPixels && letterRefPixels.size>0){
+    let covered=0;
+    for(const i of letterRefPixels){
+      if(pixels[i]>180 && pixels[i+1]>150 && pixels[i+2]<120 && pixels[i+3]>50)
+        covered++;
+    }
+    const letterSize=letterRefPixels.size;
+    const coverPct=covered/letterSize;
+    const overDraw=totalDrawn/letterSize;
+
+
+
+    // Scribble all over — too much drawn relative to letter size
+    if(overDraw > 3.5){
+      showTraceMsg('🖍️ נַסֵּה לְצַיֵּר רַק עַל הָאוֹת!');
+      return;
+    }
+    // Didn't draw on the letter enough
+    if(coverPct < 0.50){
+      showTraceMsg('🎯 נַסֵּה לְצַיֵּר יוֹתֵר עַל הָאוֹת!');
+      return;
+    }
+  }
+
+  addScore(8);
+  set('dotsFb',rndMsg());cls('dotsFb','fb ok');
+  dotsIdx++;
+  setTimeout(()=>{
+    document.querySelectorAll('#dotsScr .dyn-btn').forEach(b=>b.remove());
+    loadDotsChar();
+  },700);
+}
+
+function showTraceMsg(msg){
+  set('dotsFb',msg);
+  cls('dotsFb','fb hint');
+  const wrap=document.getElementById('dotsCanvas').parentElement;
+  wrap.style.animation='shake .4s ease';
+  setTimeout(()=>{wrap.style.animation='';},400);
 }
 
 // ══════════════════════════════════════════════════

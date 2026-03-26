@@ -1,9 +1,8 @@
 {
-  "name": "צועדים לכיתה א׳",
-  "short_name": "כיתה א׳",
-  "description": "Learning app for kindergarten",
-  "start_url": "/first-grade-steps/index.html",
-  "scope": "/first-grade-steps/",
+  "name": "צועדים לכיתה א",
+  "short_name": "כיתה א",
+  "description": "משחק למידה לגיל 5",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d0d1a",
   "theme_color": "#ffd93d",
@@ -15,25 +14,13 @@
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }
