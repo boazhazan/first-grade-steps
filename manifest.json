@@ -1,0 +1,16 @@
+{
+  "name": "צועדים לכיתה א׳ 🌟",
+  "short_name": "כיתה א׳",
+  "description": "משחק למידה והכנה לכיתה א׳ — מספרים, אותיות, צבעים וצורות",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d0d1a",
+  "theme_color": "#ffd93d",
+  "orientation": "portrait",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {"src": "icon-192.png","sizes": "192x192","type": "image/png","purpose": "any maskable"},
+    {"src": "icon-512.png","sizes": "512x512","type": "image/png","purpose": "any maskable"}
+  ]
+}
