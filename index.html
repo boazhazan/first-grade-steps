@@ -587,14 +587,20 @@ const MATCH_PAIRS=[
 ];
 
 const PATTERNS=[
-  {seq:['🔴','🔵','🔴','🔵','🔴'],ans:'🔵',opts:['🔵','🟢','🟡','🔴']},
-  {seq:['⭐','🌙','⭐','🌙','⭐'],ans:'🌙',opts:['🌙','☀️','⭐','🌟']},
-  {seq:['🐶','🐱','🐶','🐱','🐶'],ans:'🐱',opts:['🐱','🐟','🐶','🐰']},
-  {seq:['🟢','🟢','🔴','🟢','🟢'],ans:'🔴',opts:['🔴','🔵','🟡','🟢']},
-  {seq:['🍎','🍊','🍋','🍎','🍊'],ans:'🍋',opts:['🍋','🍇','🍎','🍊']},
-  {seq:['1️⃣','2️⃣','1️⃣','2️⃣','1️⃣'],ans:'2️⃣',opts:['2️⃣','3️⃣','1️⃣','4️⃣']},
-  {seq:['🐘','🐘','🦁','🐘','🐘'],ans:'🦁',opts:['🦁','🐯','🐻','🐘']},
-  {seq:['🔺','🔶','🔺','🔶','🔺'],ans:'🔶',opts:['🔶','🔷','🔺','⭐']},
+  // show 5, ask for 6th
+  // AB AB AB: show ABABA ask B
+  {seq:['🔴','🔵','🔴','🔵','🔴','🔵'],ans:'🔵',opts:['🔵','🟢','🟡','🔴']},
+  {seq:['⭐','🌙','⭐','🌙','⭐','🌙'],ans:'🌙',opts:['🌙','☀️','⭐','🌟']},
+  {seq:['🐶','🐱','🐶','🐱','🐶','🐱'],ans:'🐱',opts:['🐱','🐟','🐶','🐰']},
+  {seq:['🔺','🔶','🔺','🔶','🔺','🔶'],ans:'🔶',opts:['🔶','🔷','🔺','⭐']},
+  {seq:['🌸','🌻','🌸','🌻','🌸','🌻'],ans:'🌻',opts:['🌻','🌹','🌸','🌷']},
+  {seq:['1️⃣','2️⃣','1️⃣','2️⃣','1️⃣','2️⃣'],ans:'2️⃣',opts:['2️⃣','3️⃣','1️⃣','4️⃣']},
+  // AAB AAB: show AABAA ask B
+  {seq:['🟢','🟢','🔴','🟢','🟢','🔴'],ans:'🔴',opts:['🔴','🔵','🟡','🟢'],hint:'שִׂים לֵב לַדֶּפֶס!'},
+  {seq:['🐘','🐘','🦁','🐘','🐘','🦁'],ans:'🦁',opts:['🦁','🐯','🐻','🐘'],hint:'שִׂים לֵב לַדֶּפֶס!'},
+  // ABC ABC: show ABCAB ask C
+  {seq:['🍎','🍊','🍋','🍎','🍊','🍋'],ans:'🍋',opts:['🍋','🍇','🍎','🍊']},
+  {seq:['🐱','🐶','🐰','🐱','🐶','🐰'],ans:'🐰',opts:['🐰','🐭','🐱','🐶']},
 ];
 
 const JUD5={
@@ -857,9 +863,10 @@ function loadQ(){
     qel.innerHTML=q.question.replace('\n','<br>');
     qel.style.fontSize='1.4rem';
   } else if(q.type==='pattern'){
-    const display=q.seq.slice(0,4).join(' ');
-    disp.innerHTML=`<div class="pattern-row">${display} <span class="pattern-q">?</span></div>`;
-    qel.textContent='מָה בָּא אַחַר כָּךְ?';
+    // Show first 5, ask for 6th
+    const shown = q.seq.slice(0,5).join('  ');
+    disp.innerHTML=`<div class="pattern-row" style="font-size:2.5rem;gap:4px;flex-wrap:wrap">${shown}  <span class="pattern-q" style="color:var(--a2);font-size:2.8rem">?</span></div>`;
+    qel.textContent = q.hint || 'מָה בָּא אַחַר כָּךְ?';
   } else if(q.type==='missing'){
     const seqStr=q.seq.map(x=>x==='?'?'❓':x).join('  ');
     disp.innerHTML=`<div style="font-size:2rem;text-align:center;direction:ltr;letter-spacing:4px">${seqStr}</div>`;
